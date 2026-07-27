@@ -46,7 +46,7 @@ Content-Length: 2
 **Запрос:**
 
 curl -i -X POST http://localhost:8080/tasks
-```
+
 
 **Ответ:**
 ```
