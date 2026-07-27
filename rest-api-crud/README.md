@@ -1,1 +1,19 @@
-rest-api-crud/ ├── go.mod ├── main.go ├── internal/ │ ├── models/ │ │ └── models.go │ ├── storage/ │ │ ├── storage.go │ │ └── memory.go │ └── http/ │ └── middleware.go └── handlers/ └── tasks.go
+
+## Описание структуры
+
+| Путь | Описание |
+|------|----------|
+| `go.mod` | Файл модуля Go, определяющий зависимости проекта |
+| `main.go` | Главный файл приложения, точка входа |
+| `internal/models/models.go` | Определение моделей данных (структуры Task и т.д.) |
+| `internal/storage/storage.go` | Интерфейс хранилища данных |
+| `internal/storage/memory.go` | Реализация хранилища в памяти (in-memory) |
+| `internal/http/middleware.go` | HTTP-мидлвары (логирование, авторизация и т.д.) |
+| `handlers/tasks.go` | HTTP-обработчики для работы с задачами (CRUD) |
+
+## Назначение
+
+Проект реализует REST API для управления задачами (CRUD операции) с использованием:
+- In-memory хранилище
+- Мидлвары для обработки запросов
+- Чистая архитектура с разделением на слои
