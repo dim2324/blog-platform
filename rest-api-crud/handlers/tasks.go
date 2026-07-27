@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"tasks-api/internal/models"
-	"tasks-api/internal/storage"
+	"rest-api-crud/internal/models"
+	"rest-api-crud/internal/storage"
 )
 
 type Handler struct {

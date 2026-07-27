@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"tasks-api/internal/models"
+	"rest-api-crud/internal/models"
 )
 
 type MemoryStorage struct {

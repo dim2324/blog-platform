@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"tasks-api/internal/handlers"
-	httputil "tasks-api/internal/http"
-	"tasks-api/internal/storage"
+	"rest-api-crud/handlers"
+	httputil "rest-api-crud/internal/http"
+	"rest-api-crud/internal/storage"
 )
 
 func main() {
