@@ -32,9 +32,8 @@
 
 curl -i -X GET http://localhost:8080/tasks
 ```
-
 **Ответ:**
-```
+
 HTTP/1.1 200 OK
 Content-Type: application/json
 Date: Mon, 27 Jul 2026 10:00:00 GMT
@@ -50,7 +49,7 @@ curl -i -X POST http://localhost:8080/tasks
 ```
 
 **Ответ:**
-```json
+```
 HTTP/1.1 400 Bad Request
 Content-Type: application/json
 Date: Mon, 27 Jul 2026 10:00:01 GMT
