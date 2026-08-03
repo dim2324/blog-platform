@@ -37,7 +37,7 @@ func TestHandleShorten(t *testing.T) {
 					t.Errorf("ожидался original_url 'http://example.com', получен '%s'", resp.OriginalURL)
 				}
 				if len(resp.ShortURL) < 6 {
-					t.Errorf("короткий URL слишком короткий: %s", resp.ShortURL)
+					t.Errorf("короткий URL: %s", resp.ShortURL)
 				}
 			},
 		},
