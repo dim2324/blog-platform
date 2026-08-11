@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -51,19 +52,14 @@ func TestURLShortener_Shorten(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortID, err := shortener.Shorten(tt.url)
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Shorten() ошибка = %v, ожидалась ошибка = %v", err, tt.wantErr)
 				return
 			}
-
 			if !tt.wantErr {
-				// Проверяем длину короткого ID
 				if len(shortID) < 6 || len(shortID) > 8 {
 					t.Errorf("короткий ID имеет неверную длину: %d, ожидалось 6-8", len(shortID))
 				}
-
-				// Проверяем, что URL сохранился корректно
 				originalURL, err := shortener.GetOriginal(shortID)
 				if err != nil {
 					t.Errorf("не удалось получить оригинальный URL: %v", err)
@@ -79,7 +75,6 @@ func TestURLShortener_Shorten(t *testing.T) {
 func TestURLShortener_GetOriginal(t *testing.T) {
 	shortener := NewURLShortener()
 
-	// Сначала сохраняем URL
 	testURL := "http://example.com"
 	shortID, err := shortener.Shorten(testURL)
 	if err != nil {
@@ -100,12 +95,10 @@ func TestURLShortener_GetOriginal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			originalURL, err := shortener.GetOriginal(tt.shortID)
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetOriginal() ошибка = %v, ожидалась ошибка = %v", err, tt.wantErr)
 				return
 			}
-
 			if !tt.wantErr && originalURL != tt.wantURL {
 				t.Errorf("GetOriginal() = %q, ожидалось %q", originalURL, tt.wantURL)
 			}
@@ -114,46 +107,39 @@ func TestURLShortener_GetOriginal(t *testing.T) {
 }
 
 func TestGenerateShortID(t *testing.T) {
-	// Тестируем уникальность
 	ids := make(map[string]bool)
-
 	for i := 0; i < 1000; i++ {
-		t.Run("генерация_уникальных_ID", func(t *testing.T) {
-			id := generateShortID()
-
-			// Проверяем длину
-			if len(id) < 6 || len(id) > 8 {
-				t.Errorf("сгенерирован ID неверной длины: %d", len(id))
-			}
-
-			// Проверяем уникальность
-			if ids[id] {
-				t.Errorf("сгенерирован дублирующийся ID: %s", id)
-			}
-			ids[id] = true
-		})
+		id := generateShortID()
+		if len(id) < 6 || len(id) > 8 {
+			t.Errorf("сгенерирован ID неверной длины: %d", len(id))
+		}
+		if ids[id] {
+			t.Errorf("сгенерирован дублирующийся ID: %s", id)
+		}
+		ids[id] = true
 	}
 }
 
 func TestURLShortener_Concurrent(t *testing.T) {
 	shortener := NewURLShortener()
+	const goroutines = 10
+	errCh := make(chan error, goroutines)
+	var wg sync.WaitGroup
 
-	t.Run("конкурентное_сохранение", func(t *testing.T) {
-		done := make(chan bool)
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			url := fmt.Sprintf("http://example.com/path/%d", id)
+			if _, err := shortener.Shorten(url); err != nil {
+				errCh <- err
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errCh)
 
-		for i := 0; i < 10; i++ {
-			go func(id int) {
-				url := fmt.Sprintf("http://example.com/path/%d", id)
-				_, err := shortener.Shorten(url)
-				if err != nil {
-					t.Errorf("ошибка при конкурентном сохранении: %v", err)
-				}
-				done <- true
-			}(i)
-		}
-
-		for i := 0; i < 10; i++ {
-			<-done
-		}
-	})
+	for err := range errCh {
+		t.Errorf("ошибка при конкурентном сохранении: %v", err)
+	}
 }

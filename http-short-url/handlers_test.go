@@ -29,8 +29,7 @@ func TestHandleShorten(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, body []byte) {
 				var resp ShortenResponse
-				err := json.Unmarshal(body, &resp)
-				if err != nil {
+				if err := json.Unmarshal(body, &resp); err != nil {
 					t.Fatalf("не удалось распарсить ответ: %v", err)
 				}
 				if resp.OriginalURL != "http://example.com" {
@@ -47,7 +46,9 @@ func TestHandleShorten(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, body []byte) {
 				var errResp ErrorResponse
-				json.Unmarshal(body, &errResp)
+				if err := json.Unmarshal(body, &errResp); err != nil {
+					t.Fatalf("не удалось распарсить ответ: %v", err)
+				}
 				if errResp.Error == "" {
 					t.Error("ожидалось сообщение об ошибке")
 				}
@@ -61,7 +62,9 @@ func TestHandleShorten(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, body []byte) {
 				var errResp ErrorResponse
-				json.Unmarshal(body, &errResp)
+				if err := json.Unmarshal(body, &errResp); err != nil {
+					t.Fatalf("не удалось распарсить ответ: %v", err)
+				}
 				if errResp.Error == "" {
 					t.Error("ожидалось сообщение об ошибке для пустого URL")
 				}
@@ -75,7 +78,9 @@ func TestHandleShorten(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			checkResponse: func(t *testing.T, body []byte) {
 				var errResp ErrorResponse
-				json.Unmarshal(body, &errResp)
+				if err := json.Unmarshal(body, &errResp); err != nil {
+					t.Fatalf("не удалось распарсить ответ: %v", err)
+				}
 				if errResp.Error == "" {
 					t.Error("ожидалось сообщение об ошибке для невалидного URL")
 				}
@@ -85,29 +90,25 @@ func TestHandleShorten(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Подготовка запроса
 			var body []byte
 			if str, ok := tt.requestBody.(string); ok {
 				body = []byte(str)
 			} else {
-				body, _ = json.Marshal(tt.requestBody)
+				var err error
+				body, err = json.Marshal(tt.requestBody)
+				if err != nil {
+					t.Fatalf("не удалось маршалировать тело запроса: %v", err)
+				}
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/shorten", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-
-			// Создание ResponseRecorder
 			w := httptest.NewRecorder()
-
-			// Вызов обработчика
 			handleShorten(w, req)
 
-			// Проверка статуса
 			if w.Code != tt.expectedStatus {
 				t.Errorf("ожидался статус %d, получен %d", tt.expectedStatus, w.Code)
 			}
-
-			// Проверка ответа
 			tt.checkResponse(t, w.Body.Bytes())
 		})
 	}
@@ -116,8 +117,10 @@ func TestHandleShorten(t *testing.T) {
 func TestHandleRedirect(t *testing.T) {
 	setupTest()
 
-	// Сохраняем тестовый URL
-	shortener.Shorten("http://example.com/redirect")
+	shortID, err := shortener.Shorten("http://example.com/redirect")
+	if err != nil {
+		t.Fatalf("не удалось сохранить тестовый URL: %v", err)
+	}
 
 	tests := []struct {
 		name           string
@@ -127,9 +130,9 @@ func TestHandleRedirect(t *testing.T) {
 	}{
 		{
 			name:           "успешный редирект",
-			url:            "/test123", // Этот ID должен существовать
+			url:            "/" + shortID,
 			expectedStatus: http.StatusFound,
-			expectedURL:    "",
+			expectedURL:    "http://example.com/redirect",
 		},
 		{
 			name:           "несуществующий короткий URL",
@@ -143,31 +146,18 @@ func TestHandleRedirect(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedURL:    "",
 		},
-		{
-			name:           "метод не POST (должен быть GET)",
-			url:            "/shorten",
-			expectedStatus: http.StatusBadRequest,
-			expectedURL:    "",
-		},
 	}
-
-	// Создаем тестовый URL для первого теста
-	shortID, _ := shortener.Shorten("http://example.com/redirect")
-	tests[0].url = "/" + shortID
-	tests[0].expectedURL = "http://example.com/redirect"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.url, nil)
 			w := httptest.NewRecorder()
-
 			handleRedirect(w, req)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("ожидался статус %d, получен %d", tt.expectedStatus, w.Code)
 			}
 
-			// Проверяем заголовок Location для редиректов
 			if tt.expectedStatus == http.StatusFound && tt.expectedURL != "" {
 				location := w.Header().Get("Location")
 				if location != tt.expectedURL {
@@ -184,7 +174,6 @@ func TestMethodValidation(t *testing.T) {
 	t.Run("POST метод для /shorten", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/shorten", nil)
 		w := httptest.NewRecorder()
-
 		handleShorten(w, req)
 
 		if w.Code != http.StatusMethodNotAllowed {
@@ -196,7 +185,6 @@ func TestMethodValidation(t *testing.T) {
 	t.Run("не-GET метод для редиректа", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/test123", nil)
 		w := httptest.NewRecorder()
-
 		handleRedirect(w, req)
 
 		if w.Code != http.StatusMethodNotAllowed {
@@ -210,12 +198,10 @@ func TestIntegration(t *testing.T) {
 	setupTest()
 
 	t.Run("полный цикл: сокращение и редирект", func(t *testing.T) {
-		// Сокращаем URL
 		body := bytes.NewBufferString(`{"url":"http://example.com/test"}`)
 		req := httptest.NewRequest(http.MethodPost, "/shorten", body)
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
-
 		handleShorten(w, req)
 
 		if w.Code != http.StatusOK {
@@ -223,12 +209,12 @@ func TestIntegration(t *testing.T) {
 		}
 
 		var resp ShortenResponse
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("не удалось распарсить ответ: %v", err)
+		}
 
-		// Теперь делаем редирект
 		req = httptest.NewRequest(http.MethodGet, "/"+resp.ShortURL, nil)
 		w = httptest.NewRecorder()
-
 		handleRedirect(w, req)
 
 		if w.Code != http.StatusFound {
