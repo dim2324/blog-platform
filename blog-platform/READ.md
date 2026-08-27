@@ -5,6 +5,7 @@ blog-platform/
 │   ├── handler/
 │   │   ├── auth_handler.go
 │   │   ├── post_handler.go
+        ├── handler.go
 │   │   ├── comment_handler.go
 │   │   └── health.go
 │   ├── middleware/
@@ -33,3 +34,4 @@ blog-platform/
 ├── Dockerfile
 ├── go.mod
 └── README.md
+  # Все действия (создание поста/комментария) записываются в файл log.txt с задержкой 1–2 секунды.
