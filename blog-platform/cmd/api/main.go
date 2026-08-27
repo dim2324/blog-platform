@@ -93,9 +93,8 @@ func startLogger(ctx context.Context, wg *sync.WaitGroup, logChan <-chan string)
 	for {
 		select {
 		case msg := <-logChan:
-			// задержка 1-2 секунды (имитация обработки)
 			select {
-			case <-time.After(1 * time.Second):
+			case <-time.After(1 * time.Second): // задержка 1-2 секунды
 				file.WriteString(msg + "\n")
 			case <-ctx.Done():
 				return

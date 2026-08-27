@@ -1,6 +1,17 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrInvalidTitle   = errors.New("title cannot be empty")
+	ErrInvalidContent = errors.New("content cannot be empty")
+	ErrEmptyComment   = errors.New("comment text cannot be empty") // <-- добавьте эту строку
+	ErrPostNotFound   = errors.New("post not found")
+	ErrUserNotFound   = errors.New("user not found")
+)
 
 type User struct {
 	ID        int       `json:"id"`

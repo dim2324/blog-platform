@@ -10,7 +10,6 @@ import (
 )
 
 func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	// Получаем userID из контекста, установленного middleware
 	userID, ok := r.Context().Value("userID").(int)
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
