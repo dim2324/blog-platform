@@ -32,7 +32,7 @@ blog-platform/
 │   │   └── password.go
 │   └── database/
 │       └── db.go
-├── data/  # JSON-файлы создаются автоматически
+├── data/  # JSON-файлы создаются автоматически (users.json)
 ├── .env.example
 ├── docker-compose.yml
 ├── Dockerfile
