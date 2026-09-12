@@ -70,7 +70,9 @@ func (s *JSONStore) saveComments() {
 func (s *JSONStore) GetUsers() []model.User {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return append([]model.User(nil), s.users...)
+	result := make([]model.User, len(s.users))
+	copy(result, s.users)
+	return result
 }
 
 func (s *JSONStore) AddUser(user *model.User) error {
@@ -86,7 +88,9 @@ func (s *JSONStore) AddUser(user *model.User) error {
 func (s *JSONStore) GetPosts() []model.Post {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return append([]model.Post(nil), s.posts...)
+	result := make([]model.Post, len(s.posts))
+	copy(result, s.posts)
+	return result
 }
 
 func (s *JSONStore) AddPost(post *model.Post) error {
@@ -102,7 +106,9 @@ func (s *JSONStore) AddPost(post *model.Post) error {
 func (s *JSONStore) GetComments() []model.Comment {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return append([]model.Comment(nil), s.comments...)
+	result := make([]model.Comment, len(s.comments))
+	copy(result, s.comments)
+	return result
 }
 
 func (s *JSONStore) AddComment(comment *model.Comment) error {

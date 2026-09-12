@@ -27,6 +27,10 @@ func main() {
 	postRepo := repository.NewPostRepo(store)
 	commentRepo := repository.NewCommentRepo(store)
 
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+
 	logChan := make(chan string, 100)
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
@@ -35,7 +39,7 @@ func main() {
 
 	userService := service.NewUserService(userRepo)
 	postService := service.NewPostService(postRepo, logChan)
-	commentService := service.NewCommentService(commentRepo, logChan)
+	commentService := service.NewCommentService(commentRepo, postRepo, logChan)
 
 	h := handler.NewHandler(userService, postService, commentService)
 
@@ -94,8 +98,9 @@ func startLogger(ctx context.Context, wg *sync.WaitGroup, logChan <-chan string)
 		select {
 		case msg := <-logChan:
 			select {
-			case <-time.After(1 * time.Second): // задержка 1-2 секунды
-				file.WriteString(msg + "\n")
+			case <-time.After(1 * time.Second): // задержка 1 секунда
+				ts := time.Now().Format("2006-01-02 15:04:05")
+				file.WriteString(ts + " " + msg + "\n")
 			case <-ctx.Done():
 				return
 			}

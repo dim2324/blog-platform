@@ -1,17 +1,11 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"blog-platform/internal/model"
 	"blog-platform/internal/repository"
-)
-
-var (
-	ErrEmptyTitle   = errors.New("title cannot be empty")
-	ErrEmptyContent = errors.New("content cannot be empty")
 )
 
 type PostService struct {
@@ -28,10 +22,10 @@ func NewPostService(repo repository.PostRepository, logChan chan string) *PostSe
 
 func (s *PostService) Create(authorID int, title, content string) (*model.Post, error) {
 	if title == "" {
-		return nil, ErrEmptyTitle
+		return nil, model.ErrInvalidTitle
 	}
 	if content == "" {
-		return nil, ErrEmptyContent
+		return nil, model.ErrInvalidContent
 	}
 
 	post := &model.Post{
@@ -45,9 +39,7 @@ func (s *PostService) Create(authorID int, title, content string) (*model.Post, 
 		return nil, fmt.Errorf("create post: %w", err)
 	}
 
-	// Отправляем событие в канал логирования
 	s.logChan <- fmt.Sprintf("user %d created post %d", authorID, post.ID)
-
 	return post, nil
 }
 

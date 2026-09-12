@@ -9,17 +9,27 @@ import (
 )
 
 type CommentService struct {
-	repo    repository.CommentRepository
-	logChan chan string
+	repo     repository.CommentRepository
+	postRepo repository.PostRepository
+	logChan  chan string
 }
 
-func NewCommentService(repo repository.CommentRepository, logChan chan string) *CommentService {
-	return &CommentService{repo: repo, logChan: logChan}
+func NewCommentService(repo repository.CommentRepository, postRepo repository.PostRepository, logChan chan string) *CommentService {
+	return &CommentService{
+		repo:     repo,
+		postRepo: postRepo,
+		logChan:  logChan,
+	}
 }
 
 func (s *CommentService) Create(postID, authorID int, text string) (*model.Comment, error) {
 	if text == "" {
 		return nil, model.ErrEmptyComment
+	}
+
+	// Проверяем существование поста
+	if _, err := s.postRepo.GetByID(postID); err != nil {
+		return nil, model.ErrPostNotFound
 	}
 
 	comment := &model.Comment{

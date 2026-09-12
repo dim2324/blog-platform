@@ -19,7 +19,7 @@ func (r *CommentRepo) Create(comment *model.Comment) error {
 
 func (r *CommentRepo) ListByPostID(postID int) ([]model.Comment, error) {
 	comments := r.store.GetComments()
-	var result []model.Comment
+	result := []model.Comment{} // инициализируем как пустой, а не nil
 	for _, c := range comments {
 		if c.PostID == postID {
 			result = append(result, c)

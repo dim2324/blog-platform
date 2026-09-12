@@ -7,12 +7,13 @@ import (
 	"strconv"
 
 	"blog-platform/internal/model"
+	"blog-platform/pkg/httpjson"
 )
 
 func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("userID").(int)
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		httpjson.WriteError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -21,54 +22,55 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		Content string `json:"content"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		httpjson.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	post, err := h.postService.Create(userID, req.Title, req.Content)
 	if err != nil {
 		switch {
-		case errors.Is(err, model.ErrInvalidTitle), errors.Is(err, model.ErrInvalidContent):
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, model.ErrInvalidTitle):
+			httpjson.WriteError(w, http.StatusBadRequest, "title cannot be empty")
+		case errors.Is(err, model.ErrInvalidContent):
+			httpjson.WriteError(w, http.StatusBadRequest, "content cannot be empty")
 		default:
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			httpjson.WriteError(w, http.StatusInternalServerError, "internal error")
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(post)
+	httpjson.WriteJSON(w, http.StatusCreated, post)
 }
 
 func (h *Handler) ListPosts(w http.ResponseWriter, r *http.Request) {
 	posts, err := h.postService.List()
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		httpjson.WriteError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(posts)
+	if posts == nil {
+		posts = []model.Post{}
+	}
+	httpjson.WriteJSON(w, http.StatusOK, posts)
 }
 
 func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid post id", http.StatusBadRequest)
+		httpjson.WriteError(w, http.StatusBadRequest, "invalid post id")
 		return
 	}
 
 	post, err := h.postService.GetByID(id)
 	if err != nil {
 		if errors.Is(err, model.ErrPostNotFound) {
-			http.Error(w, "post not found", http.StatusNotFound)
+			httpjson.WriteError(w, http.StatusNotFound, "post not found")
 		} else {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			httpjson.WriteError(w, http.StatusInternalServerError, "internal error")
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(post)
+	httpjson.WriteJSON(w, http.StatusOK, post)
 }

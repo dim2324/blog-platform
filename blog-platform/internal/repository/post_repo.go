@@ -28,5 +28,9 @@ func (r *PostRepo) GetByID(id int) (*model.Post, error) {
 }
 
 func (r *PostRepo) List() ([]model.Post, error) {
-	return r.store.GetPosts(), nil
+	posts := r.store.GetPosts()
+	if posts == nil {
+		posts = []model.Post{}
+	}
+	return posts, nil
 }

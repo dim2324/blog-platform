@@ -8,17 +8,34 @@ import (
 var (
 	ErrInvalidTitle   = errors.New("title cannot be empty")
 	ErrInvalidContent = errors.New("content cannot be empty")
-	ErrEmptyComment   = errors.New("comment text cannot be empty") // <-- добавьте эту строку
+	ErrEmptyComment   = errors.New("comment text cannot be empty")
 	ErrPostNotFound   = errors.New("post not found")
 	ErrUserNotFound   = errors.New("user not found")
 )
 
 type User struct {
+	ID           int       `json:"id"`
+	Email        string    `json:"email"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"password_hash"` // сохраняется в файл
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// UserResponse — структура для ответов клиенту (без хеша пароля)
+type UserResponse struct {
 	ID        int       `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
-	Password  string    `json:"-"` // не сериализуем в JSON
 	CreatedAt time.Time `json:"created_at"`
+}
+
+func (u *User) ToResponse() UserResponse {
+	return UserResponse{
+		ID:        u.ID,
+		Email:     u.Email,
+		Username:  u.Username,
+		CreatedAt: u.CreatedAt,
+	}
 }
 
 type Post struct {

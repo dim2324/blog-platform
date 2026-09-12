@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"blog-platform/internal/service"
+	"blog-platform/pkg/httpjson"
 )
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -15,23 +16,26 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		httpjson.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	user, err := h.userService.Register(req.Email, req.Username, req.Password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserAlreadyExists) {
-			http.Error(w, "email or username already exists", http.StatusConflict)
-		} else {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, service.ErrInvalidEmail):
+			httpjson.WriteError(w, http.StatusBadRequest, "invalid email format")
+		case errors.Is(err, service.ErrEmptyFields):
+			httpjson.WriteError(w, http.StatusBadRequest, "email, username and password are required")
+		case errors.Is(err, service.ErrUserAlreadyExists):
+			httpjson.WriteError(w, http.StatusConflict, "email or username already exists")
+		default:
+			httpjson.WriteError(w, http.StatusInternalServerError, "internal error")
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	httpjson.WriteJSON(w, http.StatusCreated, user.ToResponse())
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -40,16 +44,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		httpjson.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	token, err := h.userService.Login(req.Email, req.Password)
 	if err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		httpjson.WriteError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	httpjson.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
 }

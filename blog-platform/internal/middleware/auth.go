@@ -6,19 +6,20 @@ import (
 	"strings"
 
 	"blog-platform/pkg/auth"
+	"blog-platform/pkg/httpjson"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := r.Header.Get("Authorization")
 		if tokenStr == "" || !strings.HasPrefix(tokenStr, "Bearer ") {
-			http.Error(w, "missing or invalid token", http.StatusUnauthorized)
+			httpjson.WriteError(w, http.StatusUnauthorized, "missing or invalid token")
 			return
 		}
 
 		claims, err := auth.ValidateToken(strings.TrimPrefix(tokenStr, "Bearer "))
 		if err != nil {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
+			httpjson.WriteError(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
 

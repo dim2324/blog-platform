@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"net/mail"
 	"time"
 
 	"blog-platform/internal/model"
@@ -12,6 +13,8 @@ import (
 var (
 	ErrUserAlreadyExists  = errors.New("user already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidEmail       = errors.New("invalid email format")
+	ErrEmptyFields        = errors.New("email, username and password are required")
 )
 
 type UserService struct {
@@ -23,7 +26,13 @@ func NewUserService(repo repository.UserRepository) *UserService {
 }
 
 func (s *UserService) Register(email, username, password string) (*model.User, error) {
-	// Проверка уникальности email и username
+	if email == "" || username == "" || password == "" {
+		return nil, ErrEmptyFields
+	}
+	if _, err := mail.ParseAddress(email); err != nil {
+		return nil, ErrInvalidEmail
+	}
+
 	if _, err := s.repo.FindByEmail(email); err == nil {
 		return nil, ErrUserAlreadyExists
 	}
@@ -31,17 +40,16 @@ func (s *UserService) Register(email, username, password string) (*model.User, e
 		return nil, ErrUserAlreadyExists
 	}
 
-	// Хэширование пароля
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
 	user := &model.User{
-		Email:     email,
-		Username:  username,
-		Password:  hashedPassword,
-		CreatedAt: time.Now(),
+		Email:        email,
+		Username:     username,
+		PasswordHash: hashedPassword,
+		CreatedAt:    time.Now(),
 	}
 
 	if err := s.repo.Create(user); err != nil {
@@ -57,7 +65,7 @@ func (s *UserService) Login(email, password string) (string, error) {
 		return "", ErrInvalidCredentials
 	}
 
-	if !auth.CheckPasswordHash(password, user.Password) {
+	if !auth.CheckPasswordHash(password, user.PasswordHash) {
 		return "", ErrInvalidCredentials
 	}
 
