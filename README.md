@@ -23,6 +23,7 @@ REST API блог-платформы на Go. Хранение данных — 
 
 blog-platform/
 
+```text
 ├── cmd/api/main.go
 ├── data/
 ├── internal/
