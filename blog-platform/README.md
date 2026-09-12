@@ -1,4 +1,5 @@
 
+
 ```
 
 # Blog Platform API
@@ -7,12 +8,12 @@ REST API блог-платформы на Go. Хранение данных — 
 
 ## Возможности
 
-- Регистрация и вход (bcrypt + JWT)
-- Управление постами (создание, список, чтение по ID)
-- Комментарии к постам
-- Проверка состояния сервиса (`/health`)
-- Отложенное логирование действий (горутина + канал) в `log.txt` с временными метками
-- Единый JSON-формат ошибок
+- 🔐  Регистрация и вход (bcrypt + JWT)
+- 📄  Управление постами (создание, список, чтение по ID)
+- 💬  Комментарии к постам
+- ❤️  Проверка состояния сервиса (`/health`)
+- 🕓  Отложенное логирование действий (горутина + канал) в `log.txt` с временными метками
+- 🧩  Единый JSON-формат ошибок
 
 ## Стек и зависимости
 
@@ -21,10 +22,11 @@ REST API блог-платформы на Go. Хранение данных — 
 - `golang.org/x/crypto/bcrypt` — хеширование паролей
 - Стандартная библиотека `net/http` (Go 1.22+ `ServeMux` с метод-роутингом)
 
-## Структура проекта
+## 📁 Структура проекта
 
 blog-platform/
 ├── cmd/api/main.go
+├── data/
 ├── internal/
 │ ├── handler/
 │ ├── middleware/
@@ -35,7 +37,6 @@ blog-platform/
 │ ├── auth/
 │ ├── database/
 │ └── httpjson/
-├── data/
 ├── .env.example
 ├── docker-compose.yml
 ├── Dockerfile
@@ -43,7 +44,7 @@ blog-platform/
 └── README.md
 
 
-## Переменные окружения
+## ⚙️ Переменные окружения
 
 | Переменная   | Описание                          | По умолчанию |
 |--------------|-----------------------------------|--------------|
@@ -51,20 +52,12 @@ blog-platform/
 | `DATA_DIR`   | Каталог для JSON-файлов           | `./data`     |
 | `JWT_SECRET` | Секрет для подписи JWT (обязателен)| —            |
 
-## Установка и запуск
-
-### Локально
-
-```bash
-go mod tidy
-mkdir -p data
-export JWT_SECRET="ваш_надёжный_секрет"   # Windows: set JWT_SECRET=...
-go run ./cmd/api
 
 
-Эндпоинты
 
-Регистрация
+🌐 Эндпоинты
+
+🔹 Регистрация
 
 POST /register
 Content-Type: application/json
@@ -76,7 +69,7 @@ Content-Type: application/json
 
 Ошибки: 400 (неверный email / пустые поля), 409 (email или username занят).
 
-Вход
+🔹 Вход
 
 POST /login
 Content-Type: application/json
@@ -90,7 +83,7 @@ Content-Type: application/json
 Ошибка: 401 — неверные учётные данные.
 
 
-Создание поста (требуется токен)
+🔹 Создание поста (требуется токен)
 POST /posts
 Authorization: Bearer <TOKEN>
 Content-Type: application/json
@@ -98,15 +91,15 @@ Content-Type: application/json
 {"title":"Заголовок","content":"Текст поста"}
 Ответ 201 — объект поста. Ошибки: 400 (пустой title/content), 401 (нет токена).
 
-Список постов
+🔹 Список постов
 GET /posts
 Ответ 200 — массив постов (возможно пустой []).
 
-Один пост
+🔹 Один пост
 GET /posts/{id}
 Ответ 200 — объект поста, 404 — если не найден.
 
-Создание комментария (требуется токен)
+🔹 Создание комментария (требуется токен)
 POST /posts/{id}/comments
 Authorization: Bearer <TOKEN>
 Content-Type: application/json
@@ -115,21 +108,21 @@ Content-Type: application/json
 Ответ 201 — объект комментария.
 Ошибки: 400 (пустой текст), 401, 404 (пост не найден).
 
-Список комментариев поста
+🔹 Список комментариев поста
 GET /posts/{id}/comments
 Ответ 200 — массив комментариев (пустой [], если нет).
 Ошибка 404 — если поста нет.
 
-Health
+🔹 Health
 GET /health
 Ответ 200: {"status":"ok"}
 
-Формат ошибок
+❗ Формат ошибок
 Все ошибки возвращаются в JSON:
 
 {"error":"описание ошибки"}
 
-Логирование
+🧾 Логирование
 Действия пользователя (создание поста/комментария) асинхронно пишутся в log.txt с задержкой 1 секунда и меткой времени:
 2026-09-12 10:00:00 user 1 created post 1
 2026-09-12 10:01:00 user 1 created comment 1
@@ -137,7 +130,7 @@ GET /health
 
 
 
-Тестирование (curl)
+🧪 Тестирование (curl)
 
 # Регистрация
 curl -X POST http://localhost:8080/register \
@@ -163,31 +156,11 @@ curl -X POST http://localhost:8080/posts/1/comments \
 
 # Health
 curl http://localhost:8080/health
-Автор
-Учебный проект (Netology, Go).
 
-text
 
+
+<div align="center">
+Сделано с ❤️ на Go
+
+</div>
 ---
-
-## Что именно исправлено — сводка
-
-| № | Проблема | Решение |
-|---|----------|---------|
-| 1 | Пароль не сохранялся (`json:"-"`) | Переименовано в `PasswordHash` с тегом `json:"password_hash"`; ответы через `UserResponse` |
-| 2 | Нет валидации email | `net/mail.ParseAddress` в `UserService.Register`, ошибка `ErrInvalidEmail` → `400` |
-| 3 | Комментарий к несуществующему посту | `CommentService` принимает `PostRepository` и проверяет пост, `404` |
-| 4 | Ошибки в plain text | Новый пакет `pkg/httpjson` с `WriteError`, применён везде |
-| 5 | Пустой комментарий = `null` | Инициализация `result := []model.Comment{}`; безопасные копии срезов в `JSONStore` |
-| 6 | Пустой title → 500 | В `post_service` теперь возвращаются `model.ErrInvalidTitle/ErrInvalidContent` |
-| 7 | Логи без меток времени | `time.Now().Format("2006-01-02 15:04:05")` при записи |
-| 8 | Хардкод JWT-секрета + неверный `.env.example` | `JWT_SECRET` из env, обязательная проверка при старте; `.env.example` очищен от PostgreSQL |
-| 9 | Неполный README | Полноценный README со всеми разделами и примерами |
-
-После всех изменений:
-
-```bash
-go mod tidy
-go build ./...
-JWT_SECRET=secret go run ./cmd/api
-Сервер стартует, ошибки приходят в JSON, пароли сохраняются в data/users.json, комментарии к несуществующим постам возвращают 404, а лог пишется с метками времени.
