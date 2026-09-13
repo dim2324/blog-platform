@@ -153,5 +153,5 @@ curl -X POST http://localhost:8080/posts/1/comments \
 curl http://localhost:8080/health
 
 
-
-### Сделано с ❤️ на Go
+```
+Сделано с ❤️ на Go
